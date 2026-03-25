@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+pandas
+openpyxl
+textblob
+deep-translator
+python-multipart
+aiofiles
+starlette
+python-dotenv
+itsdangerous

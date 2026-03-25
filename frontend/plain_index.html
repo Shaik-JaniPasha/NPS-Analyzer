@@ -1,0 +1,126 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NPS Tool — Plain HTML</title>
+    <style>
+      *{box-sizing:border-box;font-family:Arial, Helvetica, sans-serif}
+      body{margin:0;background:#f6f8fa;color:#111}
+      .container{max-width:980px;margin:24px auto;padding:16px;background:#fff;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+      header{display:flex;align-items:center;justify-content:space-between}
+      .upload-card{display:flex;flex-direction:column;gap:12px;padding:12px}
+      .result{margin-top:12px}
+      button,a{background:#0366d6;color:#fff;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;text-decoration:none}
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>🚀 NPS Analyzer (Plain HTML)</h1>
+      </header>
+
+      <main>
+        <div class="upload-card">
+          <input id="fileInput" type="file" accept=".xlsx,.xls" />
+          <button id="uploadBtn">Upload & Analyze</button>
+          <div id="status" style="margin-top:8px;color:#0366d6"></div>
+          <div id="result" class="result"></div>
+        </div>
+      </main>
+
+      <footer>
+        <small id="device"></small>
+      </footer>
+    </div>
+
+    <script>
+      const uploadBtn = document.getElementById('uploadBtn');
+      const fileInput = document.getElementById('fileInput');
+      const status = document.getElementById('status');
+      const result = document.getElementById('result');
+      const device = document.getElementById('device');
+
+      // Determine backend base: when opened from Vite (port 5173) POST to backend on 8000
+      const API_BASE = (location.port === '5173') ? 'http://localhost:8000' : '';
+
+      uploadBtn.addEventListener('click', async () => {
+        const f = fileInput.files[0];
+        if (!f) return alert('Choose a file');
+        const form = new FormData();
+        form.append('file', f);
+        status.textContent = 'Processing... please wait.';
+        result.innerHTML = '';
+        try {
+          const res = await fetch(API_BASE + '/api/upload', { method: 'POST', body: form });
+
+          // Safely parse JSON only when returned
+          const contentType = res.headers.get('content-type') || '';
+          let data = null;
+          if (contentType.includes('application/json')) {
+            try {
+              data = await res.json();
+            } catch (e) {
+              // malformed JSON
+              data = { error: 'Malformed JSON response' };
+            }
+          } else {
+            // Try to read text body for debugging
+            const text = await res.text();
+            if (text) {
+              try { data = JSON.parse(text); } catch { data = { error: text }; }
+            }
+          }
+
+          if (!res.ok) {
+            const errMsg = (data && (data.detail || data.error)) || res.statusText || 'Upload failed';
+            status.textContent = 'Error: ' + errMsg;
+            return;
+          }
+
+          if (!data) {
+            status.textContent = 'Error: Empty response from server';
+            return;
+          }
+
+          status.textContent = '✅ Analysis complete';
+          renderResult(data);
+        } catch (e) {
+          status.textContent = 'Error: ' + e.message;
+        }
+      });
+
+      function renderResult(data) {
+        if (data.kpis) {
+          const h = document.createElement('h2'); h.textContent = '📊 KPIs'; result.appendChild(h);
+          const ul = document.createElement('ul');
+          for (const key in data.kpis) {
+            const li = document.createElement('li'); li.textContent = `${key}: ${data.kpis[key]}`; ul.appendChild(li);
+          }
+          result.appendChild(ul);
+        }
+        if (data.focus_areas) {
+          const h = document.createElement('h3'); h.textContent = '🎯 Focus Areas'; result.appendChild(h);
+          const ul = document.createElement('ul');
+          data.focus_areas.forEach(f => { const li = document.createElement('li'); li.textContent = `${f.Theme}: ${f.Count}`; ul.appendChild(li); });
+          result.appendChild(ul);
+        }
+        if (data.insights) {
+          const h = document.createElement('h3'); h.textContent = '💡 Key Insights'; result.appendChild(h);
+          const ul = document.createElement('ul'); data.insights.forEach(i=>{ const li=document.createElement('li'); li.textContent=i; ul.appendChild(li); }); result.appendChild(ul);
+        }
+        if (data.download_file) {
+          let url = data.download_file;
+          if (!url.startsWith('/')) url = '/' + url;
+          const a = document.createElement('a');
+          a.href = url; a.textContent = '⬇ Download Excel'; a.target = '_blank';
+          a.style.display = 'inline-block'; a.style.marginTop = '8px';
+          result.appendChild(a);
+        }
+      }
+
+      // Small device indicator
+      device.textContent = `Responsive: ${window.innerWidth < 768 ? 'Mobile' : window.innerWidth < 1024 ? 'Tablet' : 'Desktop'}`;
+    </script>
+  </body>
+</html>
