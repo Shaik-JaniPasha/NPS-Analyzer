@@ -7,7 +7,7 @@ import os
 import uuid
 
 # ✅ Import processing logic
-from nps_tool import process_nps
+from backend.nps_tool import process_nps
 
 app = FastAPI()
 
