@@ -1,3 +1,27 @@
+# 🚀 NPS Analyzer – Turn Customer Feedback into Actionable Insights
+
+Most teams collect customer feedback. Very few know what to do with it.
+
+This tool transforms raw NPS responses into:
+- 📊 Clear sentiment breakdown (Positive / Neutral / Negative)
+- 🎯 Key problem areas driving dissatisfaction
+- ⚠️ Avoidable issues impacting customer experience
+- 🧠 Actionable insights for decision-making
+
+Instead of reading hundreds of responses manually, this tool helps you:
+👉 Understand what matters  
+👉 Identify what to fix  
+👉 Improve customer experience faster  
+
+---
+
+## 💡 Why this tool?
+
+- Saves hours of manual analysis  
+- Works with multilingual feedback  
+- Converts unstructured text into structured insights  
+- Helps teams focus on high-impact improvements  
+
 NPS Tool — FastAPI backend + React (Vite) frontend
 
 **Overview**

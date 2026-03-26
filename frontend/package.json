@@ -2,13 +2,12 @@
   "name": "nps-frontend",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://Shaik-Jan.github.io/NPS_FINAL",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "git subtree push --prefix dist origin gh-pages"
   },
   "dependencies": {
     "react": "^18.2.0",
@@ -18,6 +17,6 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^6.0.1",
     "gh-pages": "^6.3.0",
-    "vite": "^8.0.2"
+    "vite": "^8.0.3"
   }
 }

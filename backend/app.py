@@ -1,42 +1,17 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 import shutil
 import os
-import pandas as pd
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-from fastapi import HTTPException
-from pathlib import Path
-from pathlib import Path
+import uuid
 
-from nps_tool import *
+# ✅ Import processing logic
+from nps_tool import process_nps
 
 app = FastAPI()
-app.mount("/output_files", StaticFiles(directory="output_files"), name="output_files")
 
-# If a built frontend exists, serve it at the root (so landing page shows the app)
-FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
-if FRONTEND_DIST.exists():
-    # Mount built assets under /static to avoid catching API POST requests.
-    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="frontend_static")
-
-    # Serve index.html at root for browser access (GET only).
-    index_file = FRONTEND_DIST / "index.html"
-    if index_file.exists():
-        @app.get("/")
-        def serve_index():
-            return FileResponse(str(index_file), media_type='text/html')
-
-
-@app.get('/plain')
-def plain_html():
-    """Serve a simple plain-HTML landing page for manual testing (no React required)."""
-    plain = Path(__file__).resolve().parent.parent / "frontend" / "plain_index.html"
-    if plain.exists():
-        return FileResponse(str(plain), media_type='text/html')
-    raise HTTPException(status_code=404, detail='plain_index.html not found')
-
-# Allow frontend connection
+# ---------------- CORS ----------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -45,37 +20,68 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-UPLOAD_FOLDER = "input_files"
-OUTPUT_FOLDER = "output_files"
+# ---------------- FOLDERS ----------------
+INPUT_DIR = "input_files"
+OUTPUT_DIR = "output_files"
 
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+os.makedirs(INPUT_DIR, exist_ok=True)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+# ✅ Serve output files (Download fix)
+app.mount("/output_files", StaticFiles(directory=OUTPUT_DIR), name="output_files")
 
+# ---------------- HEALTH CHECK ----------------
+@app.get("/")
+def home():
+    return {"status": "NPS Analyzer Backend Running 🚀"}
+
+# ---------------- UPLOAD API ----------------
 @app.post("/api/upload")
 async def upload_file(file: UploadFile = File(...)):
-    input_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    try:
+        if not file.filename.endswith((".xlsx", ".xls")):
+            raise HTTPException(status_code=400, detail="Only Excel files allowed")
 
-    # Save file
-    with open(input_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        # Unique filename (prevents overwrite + caching issues)
+        unique_name = f"{uuid.uuid4().hex}_{file.filename}"
+        input_path = os.path.join(INPUT_DIR, unique_name)
 
-    # Run your processing logic
-    output_file = process_nps(input_path)   # 👈 IMPORTANT
+        # Save uploaded file
+        with open(input_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
 
-    # Load output to extract insights
-    df = pd.read_excel(output_file, sheet_name="KPIs")
-    kpis = dict(zip(df["Metric"], df["Value"]))
+        print(f"📂 File received: {file.filename}")
 
-    focus_df = pd.read_excel(output_file, sheet_name="Focus Areas")
-    focus_areas = focus_df.to_dict(orient="records")
+        # Process file
+        output_file, kpi, focus_areas, insights = process_nps(input_path)
 
-    insights_df = pd.read_excel(output_file, sheet_name="Key Insights")
-    insights = insights_df["Insights"].tolist()
+        print(f"✅ Processing completed")
 
-    return {
-        "kpis": kpis,
-        "focus_areas": focus_areas,
-        "insights": insights,
-        "download_file": output_file
-    }
+        # Validate output file exists
+        if not os.path.exists(output_file):
+            raise HTTPException(status_code=500, detail="Output file not generated")
+
+        return {
+            "message": "Processing complete",
+            "download_url": f"/output_files/{os.path.basename(output_file)}",
+            "kpi": kpi,
+            "focus_areas": focus_areas,
+            "insights": insights
+        }
+
+    except HTTPException as he:
+        raise he
+
+    except Exception as e:
+        print("❌ ERROR:", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ---------------- DOWNLOAD API (SAFE) ----------------
+@app.get("/api/download/{filename}")
+async def download_file(filename: str):
+    file_path = os.path.join(OUTPUT_DIR, filename)
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    return FileResponse(file_path, filename=filename)
