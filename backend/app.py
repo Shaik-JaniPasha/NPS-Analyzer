@@ -1,3 +1,4 @@
+# backend/app.py
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -5,11 +6,13 @@ from fastapi.staticfiles import StaticFiles
 import shutil
 import os
 import uuid
+from pydantic import BaseModel
 
 # ✅ Import processing logic
 from backend.nps_tool import process_nps
 
-app = FastAPI()
+# ---------------- FASTAPI APP ----------------
+app = FastAPI(title="NPS Analyzer")
 
 # ---------------- CORS ----------------
 app.add_middleware(
@@ -85,3 +88,21 @@ async def download_file(filename: str):
         raise HTTPException(status_code=404, detail="File not found")
 
     return FileResponse(file_path, filename=filename)
+
+# ---------------- JSON TEXT PROCESSING ----------------
+class NPSJsonInput(BaseModel):
+    text: str
+
+@app.post("/process")
+def process_text(input: NPSJsonInput):
+    text = input.text
+
+    # --- Replace this with your actual text processing logic ---
+    # For now, using dummy sentiment and NPS score
+    result = {
+        "original_text": text,
+        "sentiment": "Positive",  # Replace with real analysis if available
+        "nps_score": 9            # Replace with real calculation
+    }
+
+    return result
