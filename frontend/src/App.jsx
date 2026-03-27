@@ -1,5 +1,8 @@
 import React, { useState } from 'react'
 
+// ✅ Your LIVE backend (Render)
+const BASE_URL = "https://nps-analyzer.onrender.com"
+
 export default function App() {
   const [file, setFile] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -15,7 +18,7 @@ export default function App() {
     form.append('file', file)
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/upload', {
+      const res = await fetch(`${BASE_URL}/api/upload`, {
         method: 'POST',
         body: form
       })
@@ -96,17 +99,18 @@ export default function App() {
             </ul>
 
             <button 
-              onClick={() => window.open(`http://127.0.0.1:8000${result.download_url}`)}
+              onClick={() => window.open(`${BASE_URL}${result.download_url}`)}
               style={{
                 marginTop: 15,
                 padding: '10px 20px',
                 background: 'green',
                 color: '#fff',
                 border: 'none',
-                borderRadius: 5
+                borderRadius: 5,
+                cursor: 'pointer'
               }}
             >
-               Download file
+              Download file
             </button>
           </>
         )}
