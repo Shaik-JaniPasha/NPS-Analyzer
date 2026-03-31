@@ -118,6 +118,17 @@ npm run build
 
 If your Render service is connected to the GitHub repository and deploys from `main`, pushing `main` should update the live app at the existing Render URL.
 
+For a Render-only deployment, use:
+
+- Build command:
+  `pip install -r backend/requirements.txt`
+- Start command:
+  `uvicorn backend.app:app --host 0.0.0.0 --port $PORT`
+- Root directory:
+  repository root
+
+This repository also includes [render.yaml](C:\Users\shaikjan\Documents\NPS_Final\render.yaml) with the same configuration so the service can be recreated as a Render Blueprint if needed.
+
 ## Notes
 
 - Translation is limited to `SA Question 6` by design.
