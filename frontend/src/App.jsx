@@ -1,6 +1,6 @@
 import React, { memo, startTransition, useDeferredValue, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'https://nps-analyzer.onrender.com'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 const ACCEPTED_TYPES = '.xlsx,.xls'
 const POLL_INTERVAL_MS = 1800
 

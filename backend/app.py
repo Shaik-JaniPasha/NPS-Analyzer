@@ -24,6 +24,7 @@ app.add_middleware(
 
 INPUT_DIR = "input_files"
 OUTPUT_DIR = "output_files"
+STATIC_DIR = os.path.join("backend", "static")
 MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024
 
 os.makedirs(INPUT_DIR, exist_ok=True)
@@ -33,6 +34,10 @@ progress_store: dict[str, dict] = {}
 progress_lock = Lock()
 
 app.mount("/output_files", StaticFiles(directory=OUTPUT_DIR), name="output_files")
+if os.path.isdir(STATIC_DIR):
+    assets_dir = os.path.join(STATIC_DIR, "assets")
+    if os.path.isdir(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
 
 def update_job(job_id: str, **updates):
@@ -88,6 +93,9 @@ def process_job(job_id: str, input_path: str):
 
 @app.get("/")
 def home():
+    index_path = os.path.join(STATIC_DIR, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
     return {"status": "NPS Analyzer Backend Running"}
 
 
@@ -148,3 +156,15 @@ async def download_file(filename: str):
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found.")
     return FileResponse(file_path, filename=safe_name)
+
+
+@app.get("/{full_path:path}")
+def frontend_routes(full_path: str):
+    if full_path.startswith("api/") or full_path.startswith("output_files/") or full_path.startswith("assets/"):
+        raise HTTPException(status_code=404, detail="Not found")
+
+    index_path = os.path.join(STATIC_DIR, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+
+    raise HTTPException(status_code=404, detail="Frontend build not found.")

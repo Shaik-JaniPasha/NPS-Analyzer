@@ -99,6 +99,25 @@ Open `http://localhost:5173/`.
 - `GET /api/download/{filename}`
   - downloads the generated output workbook
 
+## Deployment
+
+The app is now set up so the backend can serve the built React frontend from `backend/static`.
+
+- Build output is generated from `frontend/` into `backend/static`
+- The FastAPI app serves:
+  - `/api/*` for backend endpoints
+  - `/output_files/*` for generated workbook downloads
+  - `/` for the React frontend
+
+To create a production frontend build locally:
+
+```powershell
+cd C:\Users\shaikjan\Documents\NPS_Final\frontend
+npm run build
+```
+
+If your Render service is connected to the GitHub repository and deploys from `main`, pushing `main` should update the live app at the existing Render URL.
+
 ## Notes
 
 - Translation is limited to `SA Question 6` by design.

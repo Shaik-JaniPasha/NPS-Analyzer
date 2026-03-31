@@ -3,6 +3,10 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   base: './',
+  build: {
+    outDir: '../backend/static',
+    emptyOutDir: true,
+  },
   plugins: [react()]
 })
 
